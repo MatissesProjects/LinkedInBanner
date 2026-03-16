@@ -4,7 +4,7 @@
 - [Implementation Plan](./plan.md)
 
 ## Status
-- [ ] Install dependencies (Playwright, requests).
-- [ ] Initialize Playwright.
+- [x] Install dependencies (Playwright, requests).
+- [x] Initialize Playwright.
 - [ ] Extract `li_at` cookie.
 - [ ] Verify login with screenshot script.

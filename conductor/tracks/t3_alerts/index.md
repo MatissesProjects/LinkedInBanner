@@ -4,6 +4,6 @@
 - [Implementation Plan](./plan.md)
 
 ## Status
-- [ ] Implement `src/discord_alert.py`.
+- [x] Implement `src/discord_alert.py`.
 - [ ] Test Discord webhook locally.
 - [ ] Integrate alerting with `src/linkedin_bot.py` or a wrapper.

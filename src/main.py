@@ -10,12 +10,32 @@ from discord_alert import send_alert
 
 load_dotenv()
 
+SOURCE_IMAGE_URL = "https://raw.githubusercontent.com/MatissesProjects/GitProgressGraphInfo/main/githeat.png"
+
 def log(message):
     timestamp = datetime.now().strftime("%H:%M:%S")
     print(f"[{timestamp}] {message}")
 
+def download_source_image():
+    log(f"Downloading latest source image from: {SOURCE_IMAGE_URL}")
+    try:
+        if not os.path.exists("assets"):
+            os.makedirs("assets")
+        
+        response = requests.get(SOURCE_IMAGE_URL, timeout=30)
+        response.raise_for_status()
+        
+        with open("assets/banner.png", "wb") as f:
+            f.write(response.content)
+        
+        log("Source image downloaded successfully to assets/banner.png")
+        return True
+    except Exception as e:
+        log(f"Failed to download source image: {e}")
+        return False
+
 async def capture_live_banner(li_at):
-    log("Refreshing local banner from LinkedIn...")
+    log("Refreshing repository with live banner from LinkedIn...")
     from playwright.async_api import async_playwright
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -23,29 +43,18 @@ async def capture_live_banner(li_at):
         await context.add_cookies([{"name": "li_at", "value": li_at, "domain": ".www.linkedin.com", "path": "/"}])
         page = await context.new_page()
         
-        # Navigate to profile
         log("Navigating to profile for capture...")
         await page.goto("https://www.linkedin.com/in/me/", wait_until="networkidle", timeout=60000)
         
         banner_container_selector = '.profile-background-image'
         try:
-            log("Waiting for banner container...")
             await page.wait_for_selector(banner_container_selector, timeout=15000)
-            
-            # Ensure assets directory exists
-            if not os.path.exists("assets"):
-                os.makedirs("assets")
-            
-            # Attempt a targeted screenshot of the banner area to match dimensions/framing
             banner_element = await page.query_selector(banner_container_selector)
             if banner_element:
-                log("Capturing targeted screenshot of banner area...")
+                log("Capturing live screenshot of the updated banner...")
                 await banner_element.screenshot(path="assets/banner.png")
-                log("Live banner area captured to assets/banner.png")
+                log("Live banner sync complete.")
                 return True
-            else:
-                log("Banner container found but element query failed.")
-                
         except Exception as e:
             log(f"Capture failed: {e}")
         finally:
@@ -55,9 +64,7 @@ async def capture_live_banner(li_at):
 def update_workflow_cron(next_run_dt):
     workflow_path = ".github/workflows/banner-sync.yml"
     if not os.path.exists(workflow_path):
-        log(f"Error: {workflow_path} not found.")
         return False
-    
     new_cron = next_run_dt.strftime("%M %H %d %m *")
     try:
         with open(workflow_path, "r") as f:
@@ -66,41 +73,36 @@ def update_workflow_cron(next_run_dt):
         new_content = re.sub(pattern, r"\1" + new_cron + r"\2", content)
         with open(workflow_path, "w") as f:
             f.write(new_content)
-        log(f"Updated workflow cron file locally to: {new_cron}")
+        log(f"Rescheduled next run (Cron: {new_cron})")
         return True
     except Exception as e:
-        log(f"Cron file update failed: {e}")
+        log(f"Cron update failed: {e}")
         return False
 
 async def main():
-    log("Banner Sync Cycle Started (Update -> Sync).")
+    log("Banner Sync Cycle Started (GitHub -> LinkedIn -> Sync).")
     li_at = os.getenv("LI_AT_COOKIE")
     
     try:
         image_path = os.path.join("assets", "banner.png")
         
-        # 0. Bootstrap: If the file is entirely missing, pull it once
-        if not os.path.exists(image_path):
-            log("Banner image missing. Bootstrapping from LinkedIn profile...")
-            await capture_live_banner(li_at)
+        # 1. Pull the latest image from the source repository
+        download_source_image()
         
-        # 1. Update LinkedIn
-        # We use the local assets/banner.png (which the user may have updated)
-        log(f"Uploading banner from: {image_path}")
+        # 2. Update LinkedIn with the new image
+        log("Uploading new banner to LinkedIn...")
         await update_banner(image_path)
         
-        # 2. Sync: Capture the result back to local filesystem
-        # This ensures the repo reflects the actual live state (with LinkedIn's cropping/compression)
-        log("Syncing repository with the new live banner...")
+        # 3. Sync: Capture the live result back to the local repository
+        # This ensures assets/banner.png in THIS repo matches your live profile
         await capture_live_banner(li_at)
         
-        # 3. Schedule next run
+        # 4. Schedule next run
         random_hours = random.randint(15, 75)
-        random_minutes = random.randint(0, 59)
-        next_run = datetime.now(timezone.utc) + timedelta(hours=random_hours, minutes=random_minutes)
+        next_run = datetime.now(timezone.utc) + timedelta(hours=random_hours, minutes=random.randint(0, 59))
         update_workflow_cron(next_run)
             
-        log("Sync Cycle Complete. Files updated on disk for GitHub Action to push.")
+        log("Sync Cycle Complete. Changes ready for workflow commit.")
     except Exception as e:
         log(f"Cycle failed: {e}")
         send_alert(str(e), "DYNAMIC_SYNC")

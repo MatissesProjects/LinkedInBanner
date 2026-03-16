@@ -22,7 +22,6 @@ Go to **Settings > Secrets and variables > Actions > Variables** and add:
 - `EXECUTION_MODE`: `FIXED` or `RANDOM`.
 - `INTERVAL_DAYS`: Number of days between updates (e.g., `5`).
 - `PROBABILITY`: Chance of update each day (e.g., `0.20`).
-- `LAST_RUN_DATE`: Initial value (e.g., `1970-01-01`). Since the script no longer updates this automatically, you may need to update it manually in GitHub Settings if using `FIXED` mode to skip days.
 
 ## Local Development
 ```bash

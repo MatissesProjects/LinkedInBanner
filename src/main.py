@@ -25,17 +25,15 @@ def should_run():
     mode = os.getenv("EXECUTION_MODE", "FIXED").upper()
     
     if mode == "FIXED":
-        last_run_str = os.getenv("LAST_RUN_DATE", "1970-01-01")
         interval = get_env_int("INTERVAL_DAYS", 5)
         
-        try:
-            last_run = datetime.strptime(last_run_str, "%Y-%m-%d").date()
-        except ValueError:
-            last_run = date(1970, 1, 1)
-            
-        days_since = (date.today() - last_run).days
-        print(f"Mode: FIXED. Days since last run: {days_since}/{interval}")
-        return days_since >= interval
+        # Stateless check: check if the current date (toordinal) is on an interval
+        # This will trigger exactly every X days without needing state management.
+        today_ordinal = date.today().toordinal()
+        is_on_day = (today_ordinal % interval) == 0
+        
+        print(f"Mode: FIXED. Today's ordinal: {today_ordinal}, Interval: {interval}, Is on day: {is_on_day}")
+        return is_on_day
         
     elif mode == "RANDOM":
         probability = get_env_float("PROBABILITY", 0.20)

@@ -34,7 +34,6 @@ jobs:
           EXECUTION_MODE: ${{ vars.EXECUTION_MODE }}
           INTERVAL_DAYS: ${{ vars.INTERVAL_DAYS }}
           PROBABILITY: ${{ vars.PROBABILITY }}
-          LAST_RUN_DATE: ${{ vars.LAST_RUN_DATE }}
           
           # Action Context
           GITHUB_REPOSITORY: ${{ github.repository }}

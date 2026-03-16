@@ -2,8 +2,13 @@ import os
 import asyncio
 from playwright.async_api import async_playwright
 from dotenv import load_dotenv
+from datetime import datetime
 
 load_dotenv()
+
+def log(message):
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    print(f"[{timestamp}] {message}")
 
 async def update_banner(image_path):
     li_at = os.getenv("LI_AT_COOKIE")
@@ -14,9 +19,12 @@ async def update_banner(image_path):
         raise FileNotFoundError(f"Image not found at path: {image_path}")
 
     async with async_playwright() as p:
-        print("Launching browser...")
+        log("Initializing Playwright...")
         browser = await p.chromium.launch(headless=True)
+        log("Browser launched (Chromium).")
+        
         context = await browser.new_context()
+        log("Browser context created.")
         
         # Add the li_at cookie
         await context.add_cookies([
@@ -30,44 +38,50 @@ async def update_banner(image_path):
                 "sameSite": "None"
             }
         ])
+        log("Authentication cookie injected.")
         
         page = await context.new_page()
-        print("Navigating to Profile...")
-        await page.goto("https://www.linkedin.com/in/me/", wait_until="domcontentloaded")
+        log("New page opened. Navigating to LinkedIn Profile...")
         
+        try:
+            await page.goto("https://www.linkedin.com/in/me/", wait_until="domcontentloaded", timeout=60000)
+            log("Profile page reached (DOM loaded).")
+        except Exception as e:
+            log(f"Navigation timed out or failed: {e}")
+            raise
+
         # Robust wait for the profile page to load
+        log("Waiting for 'Edit background' trigger to become interactive...")
         await page.wait_for_selector('button[aria-label="Edit background"]', timeout=30000)
         
         # Check for and close any blocking modals/overlays
-        print("Clearing any blocking overlays...")
+        log("Checking for blocking modals or overlays...")
         await page.evaluate('''() => {
             const overlays = document.querySelectorAll('.artdeco-modal-overlay, .artdeco-modal');
-            overlays.forEach(el => el.remove());
+            overlays.forEach(el => {
+                el.remove();
+            });
         }''')
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
 
-        print("Clicking 'Edit background' trigger...")
+        log("Clicking 'Edit background' trigger...")
         await page.wait_for_selector('button[aria-label="Edit background"]', state="visible")
-        # Try different click methods
         await page.dispatch_event('button[aria-label="Edit background"]', 'click')
         await asyncio.sleep(3)
-        await page.screenshot(path="bot_dropdown_debug.png")
         
-        print("Waiting for 'Edit cover image' menu item...")
-        # Try to find by text directly or by ID if provided
+        log("Searching for 'Edit cover image' menu item...")
         edit_cover_selector = 'text="Edit cover image"'
         edit_cover_id_selector = '#edit-small'
         
         try:
-            # Check for ID first if user suggested it
             if await page.is_visible(edit_cover_id_selector):
-                print("Clicking #edit-small...")
+                log("Clicking #edit-small (ID match)...")
                 await page.click(edit_cover_id_selector)
             elif await page.is_visible(edit_cover_selector):
-                print("Clicking 'Edit cover image' text...")
+                log("Clicking 'Edit cover image' (Text match)...")
                 await page.click(edit_cover_selector)
             else:
-                print("Menu items not visible, trying trigger click again...")
+                log("Menu items not immediately visible, retrying trigger click...")
                 await page.click('button[aria-label="Edit background"]', force=True)
                 await asyncio.sleep(3)
                 if await page.is_visible(edit_cover_id_selector):
@@ -76,45 +90,36 @@ async def update_banner(image_path):
                     await page.wait_for_selector(edit_cover_selector, timeout=10000)
                     await page.click(edit_cover_selector)
         except Exception as e:
-            print(f"Failed to find/click 'Edit cover image': {e}")
-            # Fallback: log what's visible
-            items = await page.eval_on_selector_all(".artdeco-dropdown__content--visible li", "elements => elements.map(el => el.textContent.trim())")
-            print(f"Visible menu items: {items}")
+            log(f"Failed to find or click 'Edit cover image': {e}")
             raise
         
-        print("Waiting for file input...")
-        # The input is hidden, so we wait for it to be attached, not necessarily visible
+        log("Waiting for file upload input...")
         await page.wait_for_selector('input[type="file"]', timeout=15000, state="attached")
         
-        print(f"Uploading image: {image_path}")
+        log(f"Uploading image: {image_path}")
         await page.set_input_files('input[type="file"]', image_path)
         
-        print("Waiting for 'Apply' button...")
+        log("Waiting for 'Apply' button to appear...")
         apply_button_selector = 'button:has-text("Apply")'
         await page.wait_for_selector(apply_button_selector, timeout=15000)
         
-        print("Clicking 'Apply'...")
+        log("Clicking 'Apply' and waiting for processing...")
         await page.click(apply_button_selector)
         
         # Wait for the dialog to disappear or a success message
-        print("Finalizing upload...")
+        log("Finalizing upload (holding 5s for LinkedIn to save)...")
         await asyncio.sleep(5) 
         
         await browser.close()
-        print("Banner update process completed.")
+        log("Banner update process successful.")
 
 if __name__ == "__main__":
     # Test execution
-    # Ensure assets/banner.png exists or use a placeholder
     test_image = "assets/banner.png"
     if not os.path.exists("assets"):
         os.makedirs("assets")
     
-    # Create a placeholder image if it doesn't exist for testing
     if not os.path.exists(test_image):
-        print("Creating placeholder image for testing...")
-        # Since I can't easily generate a PNG without extra libs, 
-        # I'll just warn and exit if the user hasn't provided one.
-        print(f"Please place a valid banner image at {test_image}")
+        log(f"Please place a valid banner image at {test_image}")
     else:
         asyncio.run(update_banner(test_image))

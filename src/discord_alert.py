@@ -1,7 +1,7 @@
 import os
 import requests
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -43,7 +43,7 @@ def send_alert(error_message, execution_mode="UNKNOWN"):
                 "footer": {
                     "text": "Check your li_at cookie or update DOM selectors."
                 },
-                "timestamp": datetime.utcnow().isoformat() + "Z"
+                "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
             }
         ]
     }

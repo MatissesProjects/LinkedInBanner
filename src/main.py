@@ -16,7 +16,8 @@ def log(message):
 
 async def capture_live_banner(li_at):
     log("Capturing live banner from LinkedIn to sync repository...")
-    async with (await import_playwright()).async_playwright() as p:
+    from playwright.async_api import async_playwright
+    async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context()
         await context.add_cookies([{"name": "li_at", "value": li_at, "domain": ".www.linkedin.com", "path": "/"}])
@@ -50,12 +51,9 @@ async def capture_live_banner(li_at):
                     return True
             except:
                 pass
-        await browser.close()
+        finally:
+            await browser.close()
     return False
-
-async def import_playwright():
-    from playwright.async_api import async_playwright
-    return type('obj', (object,), {'async_playwright': lambda: async_playwright})
 
 def update_workflow_cron(next_run_dt):
     workflow_path = ".github/workflows/banner-sync.yml"

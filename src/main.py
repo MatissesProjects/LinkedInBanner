@@ -69,34 +69,47 @@ def push_changes():
         print(f"Failed to push changes to git: {e}")
         return False
 
+def log(message):
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    print(f"[{timestamp}] {message}")
+
 async def main():
-    print("Execution started.")
+    log("Banner Sync Process Started.")
     
     # Randomized sleep (robotic jitter) before the actual update
     sleep_min = get_env_int("SLEEP_MIN", 0)
     sleep_max = get_env_int("SLEEP_MAX", 300)
     sleep_time = random.randint(sleep_min, sleep_max)
-    print(f"Sleeping for {sleep_time} seconds before starting...")
-    time.sleep(sleep_time)
+    log(f"Anti-bot jitter: Sleeping for {sleep_time} seconds...")
+    
+    # Optional: heartbeats during sleep
+    for i in range(0, sleep_time, 60):
+        if i > 0:
+            log(f"Still sleeping... ({i}/{sleep_time}s elapsed)")
+        time.sleep(min(60, sleep_time - i))
     
     try:
         image_path = os.path.join("assets", "banner.png")
+        log(f"Starting LinkedIn update with image: {image_path}")
         await update_banner(image_path)
-        print("Successfully updated banner.")
+        log("LinkedIn update complete.")
         
         # Calculate next run: 15 to 75 hours in the future
         random_hours = random.randint(15, 75)
-        # We'll also add a random number of minutes to be less predictable
         random_minutes = random.randint(0, 59)
         
         next_run = datetime.now(timezone.utc) + timedelta(hours=random_hours, minutes=random_minutes)
-        print(f"Next run scheduled for: {next_run.isoformat()} (~{random_hours}h {random_minutes}m from now)")
+        log(f"Calculating next run time: {next_run.isoformat()} (in {random_hours}h {random_minutes}m)")
         
         if update_workflow_cron(next_run):
+            log("Updating GitHub workflow cron...")
             push_changes()
+            log("Success: Next run has been scheduled and pushed.")
+        
+        log("Process Finished Successfully.")
             
     except Exception as e:
-        print(f"Execution failed: {e}")
+        log(f"CRITICAL ERROR: {e}")
         send_alert(str(e), "DYNAMIC_CRON")
         exit(1)
 

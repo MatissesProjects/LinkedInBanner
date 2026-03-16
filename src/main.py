@@ -73,25 +73,28 @@ def update_workflow_cron(next_run_dt):
         return False
 
 async def main():
-    log("Banner Sync Cycle Started (Pull -> Update -> Sync).")
+    log("Banner Sync Cycle Started (Update -> Sync).")
     li_at = os.getenv("LI_AT_COOKIE")
     
     try:
         image_path = os.path.join("assets", "banner.png")
         
-        # 1. Pull current state from LinkedIn (Always)
-        # This refreshes the local file before we do anything else
-        await capture_live_banner(li_at)
+        # 0. Bootstrap: If the file is entirely missing, pull it once
+        if not os.path.exists(image_path):
+            log("Banner image missing. Bootstrapping from LinkedIn profile...")
+            await capture_live_banner(li_at)
         
-        # 2. Update LinkedIn using the (potentially refreshed) image
-        # Note: If you want to change the banner, you'd need to pause this "Pull" step 
-        # or the script will just re-upload what it just downloaded.
+        # 1. Update LinkedIn
+        # We use the local assets/banner.png (which the user may have updated)
+        log(f"Uploading banner from: {image_path}")
         await update_banner(image_path)
         
-        # 3. Final Sync: Capture the result back to local filesystem
+        # 2. Sync: Capture the result back to local filesystem
+        # This ensures the repo reflects the actual live state (with LinkedIn's cropping/compression)
+        log("Syncing repository with the new live banner...")
         await capture_live_banner(li_at)
         
-        # 4. Schedule next run
+        # 3. Schedule next run
         random_hours = random.randint(15, 75)
         random_minutes = random.randint(0, 59)
         next_run = datetime.now(timezone.utc) + timedelta(hours=random_hours, minutes=random_minutes)

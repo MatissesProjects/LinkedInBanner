@@ -29,7 +29,6 @@ jobs:
           # Secrets
           LI_AT_COOKIE: ${{ secrets.LI_AT_COOKIE }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FOR_VARS }} # PAT with variables:write
           
           # Repository Variables
           EXECUTION_MODE: ${{ vars.EXECUTION_MODE }}

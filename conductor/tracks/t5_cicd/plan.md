@@ -12,7 +12,7 @@
      - Run `python src/main.py`.
 
 2. **Environment Mapping**
-   - Map GitHub Secrets (`LI_AT_COOKIE`, `DISCORD_WEBHOOK_URL`, `GH_TOKEN_FOR_VARS`) to environment variables.
+   - Map GitHub Secrets (`LI_AT_COOKIE`, `DISCORD_WEBHOOK_URL`) to environment variables.
    - Map Repository Variables (`EXECUTION_MODE`, `INTERVAL_DAYS`, `PROBABILITY`, `LAST_RUN_DATE`) to environment variables.
 
 3. **Permissions**

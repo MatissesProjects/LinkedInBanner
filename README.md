@@ -16,7 +16,6 @@ Automatically update your LinkedIn profile banner with a randomized or fixed-int
 Go to **Settings > Secrets and variables > Actions > Secrets** and add:
 - `LI_AT_COOKIE`: Your `li_at` cookie value.
 - `DISCORD_WEBHOOK_URL`: Your Discord Webhook URL.
-- `GH_TOKEN_FOR_VARS`: A Personal Access Token (PAT) with `variables:write` scope (required to update `LAST_RUN_DATE`).
 
 ### 4. GitHub Variables
 Go to **Settings > Secrets and variables > Actions > Variables** and add:

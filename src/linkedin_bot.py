@@ -38,22 +38,60 @@ async def update_banner(image_path):
         # Robust wait for the profile page to load
         await page.wait_for_selector('button[aria-label="Edit background"]', timeout=30000)
         
+        # Check for and close any blocking modals/overlays
+        print("Clearing any blocking overlays...")
+        await page.evaluate('''() => {
+            const overlays = document.querySelectorAll('.artdeco-modal-overlay, .artdeco-modal');
+            overlays.forEach(el => el.remove());
+        }''')
+        await asyncio.sleep(1)
+
         print("Clicking 'Edit background' trigger...")
-        await page.click('button[aria-label="Edit background"]')
+        await page.wait_for_selector('button[aria-label="Edit background"]', state="visible")
+        # Try different click methods
+        await page.dispatch_event('button[aria-label="Edit background"]', 'click')
+        await asyncio.sleep(3)
+        await page.screenshot(path="bot_dropdown_debug.png")
         
         print("Waiting for 'Edit cover image' menu item...")
-        await page.wait_for_selector('text="Edit cover image"', timeout=10000)
-        await page.click('text="Edit cover image"')
+        # Try to find by text directly or by ID if provided
+        edit_cover_selector = 'text="Edit cover image"'
+        edit_cover_id_selector = '#edit-small'
+        
+        try:
+            # Check for ID first if user suggested it
+            if await page.is_visible(edit_cover_id_selector):
+                print("Clicking #edit-small...")
+                await page.click(edit_cover_id_selector)
+            elif await page.is_visible(edit_cover_selector):
+                print("Clicking 'Edit cover image' text...")
+                await page.click(edit_cover_selector)
+            else:
+                print("Menu items not visible, trying trigger click again...")
+                await page.click('button[aria-label="Edit background"]', force=True)
+                await asyncio.sleep(3)
+                if await page.is_visible(edit_cover_id_selector):
+                    await page.click(edit_cover_id_selector)
+                else:
+                    await page.wait_for_selector(edit_cover_selector, timeout=10000)
+                    await page.click(edit_cover_selector)
+        except Exception as e:
+            print(f"Failed to find/click 'Edit cover image': {e}")
+            # Fallback: log what's visible
+            items = await page.eval_on_selector_all(".artdeco-dropdown__content--visible li", "elements => elements.map(el => el.textContent.trim())")
+            print(f"Visible menu items: {items}")
+            raise
         
         print("Waiting for file input...")
-        await page.wait_for_selector('input[type="file"]', timeout=10000)
+        # The input is hidden, so we wait for it to be attached, not necessarily visible
+        await page.wait_for_selector('input[type="file"]', timeout=15000, state="attached")
         
         print(f"Uploading image: {image_path}")
         await page.set_input_files('input[type="file"]', image_path)
         
         print("Waiting for 'Apply' button...")
         apply_button_selector = 'button:has-text("Apply")'
-        await page.wait_for_selector(apply_button_selector, timeout=10000)
+        await page.wait_for_selector(apply_button_selector, timeout=15000)
         
         print("Clicking 'Apply'...")
         await page.click(apply_button_selector)

@@ -6,4 +6,4 @@
 ## Status
 - [x] Map profile DOM selectors (pencil icon, file input, apply button).
 - [x] Implement `src/linkedin_bot.py`.
-- [ ] Test banner update locally.
+- [x] Test banner update locally.

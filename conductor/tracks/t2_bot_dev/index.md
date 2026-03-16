@@ -4,6 +4,6 @@
 - [Implementation Plan](./plan.md)
 
 ## Status
-- [ ] Map profile DOM selectors (pencil icon, file input, apply button).
-- [ ] Implement `src/linkedin_bot.py`.
+- [x] Map profile DOM selectors (pencil icon, file input, apply button).
+- [x] Implement `src/linkedin_bot.py`.
 - [ ] Test banner update locally.

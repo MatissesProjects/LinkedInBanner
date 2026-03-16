@@ -2,7 +2,7 @@ name: LinkedIn Banner Sync
 
 on:
   schedule:
-    - cron: '0 0 1 1 *' # Dynamically updated by script
+    - X 12 18 03 *' # Dynamically updated by script
   workflow_dispatch: # Allow manual triggers
 
 # Allow the action to commit and push changes back to the repo

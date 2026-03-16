@@ -81,10 +81,16 @@ async def main():
     
     try:
         image_path = os.path.join("assets", "banner.png")
+        
+        # 0. Bootstrap: If image is missing, capture it first
+        if not os.path.exists(image_path):
+            log(f"Image {image_path} not found. Bootstrapping by capturing current LinkedIn banner...")
+            await capture_live_banner(li_at)
+        
         # 1. Update LinkedIn
         await update_banner(image_path)
         
-        # 2. Capture the result back to local filesystem
+        # 2. Capture the result back to local filesystem (to sync changes)
         await capture_live_banner(li_at)
         
         # 3. Calculate and write next schedule to local workflow file

@@ -6,5 +6,5 @@
 ## Status
 - [x] Install dependencies (Playwright, requests).
 - [x] Initialize Playwright.
-- [ ] Extract `li_at` cookie.
-- [ ] Verify login with screenshot script.
+- [x] Extract `li_at` cookie.
+- [x] Verify login with screenshot script.

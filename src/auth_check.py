@@ -33,7 +33,12 @@ async def run():
         await page.goto("https://www.linkedin.com/feed/")
         
         # Wait for a bit to ensure session is recognized
-        await page.wait_for_load_state("networkidle")
+        try:
+            await page.wait_for_load_state("networkidle", timeout=15000)
+        except:
+            print("Network idle timeout, checking page state regardless...")
+        
+        await asyncio.sleep(5) # Extra buffer
         
         # Check if we are on the feed or login page
         current_url = page.url

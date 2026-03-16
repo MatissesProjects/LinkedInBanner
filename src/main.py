@@ -65,7 +65,8 @@ def update_workflow_cron(next_run_dt):
     workflow_path = ".github/workflows/banner-sync.yml"
     if not os.path.exists(workflow_path):
         return False
-    new_cron = next_run_dt.strftime("%M %H %d %m *")
+    # Use format: minute hour day * *
+    new_cron = next_run_dt.strftime("%M %H %d * *")
     try:
         with open(workflow_path, "r") as f:
             content = f.read()
@@ -97,10 +98,18 @@ async def main():
         # This ensures assets/banner.png in THIS repo matches your live profile
         await capture_live_banner(li_at)
         
-        # 4. Schedule next run
-        random_hours = random.randint(15, 75)
-        next_run = datetime.now(timezone.utc) + timedelta(hours=random_hours, minutes=random.randint(0, 59))
+        # 4. Schedule next run: +1-3 days from now
+        random_days = random.randint(1, 3)
+        random_hour = random.randint(0, 23)
+        random_minute = random.randint(0, 59)
+
+        # Calculate base date by adding days, then setting randomized hour/minute
+        next_run = (datetime.now(timezone.utc) + timedelta(days=random_days)).replace(
+            hour=random_hour, minute=random_minute, second=0, microsecond=0
+        )
+
         update_workflow_cron(next_run)
+
             
         log("Sync Cycle Complete. Changes ready for workflow commit.")
     except Exception as e:

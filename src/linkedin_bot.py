@@ -45,14 +45,28 @@ async def update_banner(image_path):
         
         try:
             await page.goto("https://www.linkedin.com/in/me/", wait_until="domcontentloaded", timeout=60000)
+            log(f"Navigation finished. Current URL: {page.url}")
+            
+            if "login" in page.url or page.url == "https://www.linkedin.com/":
+                log("WARNING: Redirected to login page or home page. Cookie might be expired!")
+                await page.screenshot(path="auth_failure.png")
+                log("Screenshot saved as auth_failure.png")
+                raise Exception("Authentication failed (redirected to home/login). Please update your LI_AT_COOKIE.")
+                
             log("Profile page reached (DOM loaded).")
         except Exception as e:
             log(f"Navigation timed out or failed: {e}")
+            await page.screenshot(path="navigation_error.png")
             raise
 
         # Robust wait for the profile page to load
         log("Waiting for 'Edit background' trigger to become interactive...")
-        await page.wait_for_selector('button[aria-label="Edit background"]', timeout=30000)
+        try:
+            await page.wait_for_selector('button[aria-label="Edit background"]', timeout=30000)
+        except Exception as e:
+            log(f"Failed to find 'Edit background' button. Final URL was: {page.url}")
+            await page.screenshot(path="button_not_found.png")
+            raise
         
         # Check for and close any blocking modals/overlays
         log("Checking for blocking modals or overlays...")

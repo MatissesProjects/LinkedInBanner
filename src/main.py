@@ -103,21 +103,11 @@ async def main():
         # This ensures assets/banner.png in THIS repo matches your live profile
         await capture_live_banner(li_at)
         
-        # 4. Schedule next run: +1-3 days from now
-        random_days = random.randint(1, 3)
-        random_hour = random.randint(0, 23)
-        random_minute = random.randint(0, 59)
-
-        # Calculate base date by adding days, then setting randomized hour/minute
-        next_run = (datetime.now(timezone.utc) + timedelta(days=random_days)).replace(
-            hour=random_hour, minute=random_minute, second=0, microsecond=0
-        )
-
-        update_workflow_cron(next_run)
-
-            
-        log("Sync Cycle Complete. Changes ready for workflow commit.")
+        log("Sync Cycle Complete.")
     except Exception as e:
+        log(f"Cycle failed: {e}")
+        send_alert(str(e), "DYNAMIC_SYNC")
+        exit(1)
         log(f"Cycle failed: {e}")
         send_alert(str(e), "DYNAMIC_SYNC")
         exit(1)

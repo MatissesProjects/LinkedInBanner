@@ -28,7 +28,7 @@ async def update_banner(image_path):
     user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
 
     async with async_playwright() as p:
-        log("Initializing Playwright with Stealth settings...")
+        log("Initializing Playwright with enhanced Stealth settings...")
         browser = await p.chromium.launch(headless=True)
         
         context = await browser.new_context(
@@ -39,8 +39,26 @@ async def update_banner(image_path):
             timezone_id="UTC"
         )
         
-        # Hide automation flags
-        await context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+        # Comprehensive stealth script
+        await context.add_init_script("""
+            // Hide automation flags
+            Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+            
+            // Mock languages and plugins
+            Object.defineProperty(navigator, 'languages', {get: () => ['en-US', 'en']});
+            Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
+            
+            // Mock WebGL vendor
+            const getParameter = WebGLRenderingContext.prototype.getParameter;
+            WebGLRenderingContext.prototype.getParameter = function(parameter) {
+                if (parameter === 37445) return 'Intel Inc.';
+                if (parameter === 37446) return 'Intel(R) Iris(TM) Graphics 6100';
+                return getParameter.apply(this, arguments);
+            };
+
+            // Mock Chrome runtime
+            window.chrome = { runtime: {} };
+        """)
         
         # Add the li_at cookie
         await context.add_cookies([
@@ -59,18 +77,26 @@ async def update_banner(image_path):
         page = await context.new_page()
         
         try:
-            log("Navigating to LinkedIn Profile...")
-            # Use a longer timeout and wait for network idle to be more 'user-like'
+            log("Navigating to LinkedIn Home (warming up)...")
+            await page.goto("https://www.linkedin.com/", wait_until="networkidle", timeout=60000)
+            await human_delay(2000, 4000)
+
+            log("Navigating to Profile...")
             await page.goto("https://www.linkedin.com/in/me/", wait_until="networkidle", timeout=90000)
             log(f"Navigation finished. Current URL: {page.url}")
             
-            # Robust check for profile page vs redirection
             if "login" in page.url or "checkpoint" in page.url or "/in/" not in page.url:
-                log(f"WARNING: Redirected to non-profile page: {page.url}. Cookie rejected or challenge triggered.")
+                log(f"WARNING: Authentication failed or redirected: {page.url}")
                 await page.screenshot(path="auth_failure.png")
-                raise Exception(f"Authentication failed (redirected to {page.url}). Please update your LI_AT_COOKIE.")
+                raise Exception(f"Authentication failed. Please update your LI_AT_COOKIE.")
                 
-            log("Profile page reached.")
+            log("Profile page reached. Simulating human reading...")
+            # Scroll down and up to look like a human reading
+            await page.mouse.wheel(0, 400)
+            await human_delay(1000, 2000)
+            await page.mouse.wheel(0, -400)
+            await human_delay(1000, 2000)
+
         except Exception as e:
             log(f"Navigation error: {e}")
             await page.screenshot(path="navigation_error.png")
@@ -81,41 +107,37 @@ async def update_banner(image_path):
         # Robust wait for the profile page to load
         log("Waiting for 'Edit background' trigger...")
         try:
-            await page.wait_for_selector('button[aria-label="Edit background"]', timeout=30000)
+            trigger = page.locator('button[aria-label="Edit background"]')
+            await trigger.wait_for(state="visible", timeout=30000)
+            
+            # Hover before clicking
+            await trigger.hover()
+            await human_delay(500, 1500)
         except Exception as e:
             log(f"Failed to find 'Edit background' button. Final URL: {page.url}")
             await page.screenshot(path="button_not_found.png")
             raise
         
-        # Check for and close any blocking modals/overlays
-        log("Clearing any blocking overlays...")
-        await page.evaluate('''() => {
-            const overlays = document.querySelectorAll('.artdeco-modal-overlay, .artdeco-modal');
-            overlays.forEach(el => el.remove());
-        }''')
-        await human_delay()
-
+        # Instead of removing overlays via JS (detectable), we'll try to click naturally
         log("Clicking 'Edit background' trigger...")
-        await page.click('button[aria-label="Edit background"]', force=True)
+        await trigger.click()
         await human_delay(2000, 4000)
         
         log("Searching for 'Edit cover image' menu item...")
         edit_cover_selector = 'text="Edit cover image"'
-        edit_cover_id_selector = '#edit-small'
         
         try:
-            if await page.is_visible(edit_cover_id_selector):
-                log("Clicking #edit-small (ID match)...")
-                await page.click(edit_cover_id_selector)
-            elif await page.is_visible(edit_cover_selector):
-                log("Clicking 'Edit cover image' (Text match)...")
-                await page.click(edit_cover_selector)
-            else:
-                log("Menu not visible, retrying trigger click...")
-                await page.click('button[aria-label="Edit background"]', force=True)
-                await human_delay(2000, 3000)
-                await page.wait_for_selector(edit_cover_selector, timeout=10000)
-                await page.click(edit_cover_selector)
+            # Look for the menu item
+            menu_item = page.locator(edit_cover_selector)
+            if not await menu_item.is_visible():
+                log("Menu not visible, trying trigger click again...")
+                await trigger.click()
+                await human_delay(1000, 2000)
+            
+            await menu_item.wait_for(state="visible", timeout=10000)
+            await menu_item.hover()
+            await human_delay(500, 1000)
+            await menu_item.click()
         except Exception as e:
             log(f"Failed to find or click 'Edit cover image': {e}")
             await page.screenshot(path="menu_error.png")

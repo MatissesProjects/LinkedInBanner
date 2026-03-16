@@ -4,7 +4,6 @@ import asyncio
 import time
 from datetime import datetime, date
 from dotenv import load_dotenv
-import requests
 from linkedin_bot import update_banner
 from discord_alert import send_alert
 
@@ -21,30 +20,6 @@ def get_env_float(name, default):
         return float(os.getenv(name, default))
     except (ValueError, TypeError):
         return default
-
-def update_github_variable(name, value):
-    token = os.getenv("GITHUB_TOKEN")
-    repo = os.getenv("GITHUB_REPOSITORY")
-    if not token or not repo:
-        print("Skipping GitHub variable update: GITHUB_TOKEN or GITHUB_REPOSITORY not set.")
-        return False
-
-    url = f"https://api.github.com/repos/{repo}/actions/variables/{name}"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28"
-    }
-    data = {"name": name, "value": str(value)}
-
-    try:
-        response = requests.patch(url, headers=headers, json=data)
-        response.raise_for_status()
-        print(f"Successfully updated GitHub variable {name} to {value}")
-        return True
-    except Exception as e:
-        print(f"Failed to update GitHub variable: {e}")
-        return False
 
 def should_run():
     mode = os.getenv("EXECUTION_MODE", "FIXED").upper()
@@ -86,10 +61,7 @@ async def main():
         try:
             image_path = os.path.join("assets", "banner.png")
             await update_banner(image_path)
-            
-            # Update state
-            today_str = date.today().strftime("%Y-%m-%d")
-            update_github_variable("LAST_RUN_DATE", today_str)
+            print("Successfully updated banner.")
             
         except Exception as e:
             print(f"Execution failed: {e}")

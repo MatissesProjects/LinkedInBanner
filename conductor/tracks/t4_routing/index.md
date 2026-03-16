@@ -5,5 +5,5 @@
 
 ## Status
 - [x] Implement `src/main.py` with FIXED/RANDOM routing.
-- [x] Implement GitHub API integration to update repository variables.
-- [ ] Test scheduling logic locally with mock variables.
+- [x] Manual state management (GitHub API update removed as per user request).
+- [x] Test scheduling logic locally with mock variables.

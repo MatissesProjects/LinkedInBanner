@@ -2,7 +2,7 @@ name: LinkedIn Banner Sync
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Run daily at midnight UTC
+    - cron: '0 * * * *' # Run every hour
   workflow_dispatch: # Allow manual triggers
 
 jobs:
@@ -29,11 +29,10 @@ jobs:
           # Secrets
           LI_AT_COOKIE: ${{ secrets.LI_AT_COOKIE }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Uses the default token
           
           # Repository Variables
-          EXECUTION_MODE: ${{ vars.EXECUTION_MODE }}
-          INTERVAL_DAYS: ${{ vars.INTERVAL_DAYS }}
-          PROBABILITY: ${{ vars.PROBABILITY }}
+          NEXT_RUN_TIME: ${{ vars.NEXT_RUN_TIME }}
           
           # Action Context
           GITHUB_REPOSITORY: ${{ github.repository }}

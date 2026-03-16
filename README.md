@@ -1,6 +1,6 @@
 # LinkedIn Banner Sync
 
-Automatically update your LinkedIn profile banner with a randomized or fixed-interval schedule using Playwright and GitHub Actions.
+Automatically update your LinkedIn profile banner with a randomized window of **15 to 75 hours** using Playwright and GitHub Actions.
 
 ## Setup Instructions
 
@@ -19,9 +19,13 @@ Go to **Settings > Secrets and variables > Actions > Secrets** and add:
 
 ### 4. GitHub Variables
 Go to **Settings > Secrets and variables > Actions > Variables** and add:
-- `EXECUTION_MODE`: `FIXED` or `RANDOM`.
-- `INTERVAL_DAYS`: Number of days between updates (e.g., `5`).
-- `PROBABILITY`: Chance of update each day (e.g., `0.20`).
+- `NEXT_RUN_TIME`: Leave empty or set to an ISO timestamp (e.g., `2026-03-15T12:00:00Z`).
+
+### 5. CRITICAL: Workflow Permissions
+To allow the script to automatically schedule its next run, you **must** enable write permissions:
+- Go to your repository **Settings > Actions > General**.
+- Under **Workflow permissions**, select **"Read and write permissions"**.
+- Click **Save**.
 
 ## Local Development
 ```bash

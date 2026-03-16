@@ -4,6 +4,6 @@
 - [Implementation Plan](./plan.md)
 
 ## Status
-- [ ] Create `.github/workflows/banner-sync.yml`.
-- [ ] Document required GitHub Secrets and Variables.
-- [ ] Verify workflow syntax.
+- [x] Create `.github/workflows/banner-sync.yml`.
+- [x] Document required GitHub Secrets and Variables.
+- [x] Verify workflow syntax.

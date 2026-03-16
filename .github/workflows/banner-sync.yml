@@ -1,0 +1,43 @@
+name: LinkedIn Banner Sync
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Run daily at midnight UTC
+  workflow_dispatch: # Allow manual triggers
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+
+      - name: Run Banner Sync
+        env:
+          # Secrets
+          LI_AT_COOKIE: ${{ secrets.LI_AT_COOKIE }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FOR_VARS }} # PAT with variables:write
+          
+          # Repository Variables
+          EXECUTION_MODE: ${{ vars.EXECUTION_MODE }}
+          INTERVAL_DAYS: ${{ vars.INTERVAL_DAYS }}
+          PROBABILITY: ${{ vars.PROBABILITY }}
+          LAST_RUN_DATE: ${{ vars.LAST_RUN_DATE }}
+          
+          # Action Context
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: python src/main.py

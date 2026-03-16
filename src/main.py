@@ -1,7 +1,6 @@
 import os
 import random
 import asyncio
-import time
 import re
 import requests
 from datetime import datetime, timedelta, timezone
@@ -10,12 +9,6 @@ from linkedin_bot import update_banner
 from discord_alert import send_alert
 
 load_dotenv()
-
-def get_env_int(name, default):
-    try:
-        return int(os.getenv(name, default))
-    except (ValueError, TypeError):
-        return default
 
 def log(message):
     timestamp = datetime.now().strftime("%H:%M:%S")
@@ -87,10 +80,6 @@ def update_workflow_cron(next_run_dt):
 async def main():
     log("Banner Sync & Capture Started (Stateless Workflow Mode).")
     li_at = os.getenv("LI_AT_COOKIE")
-    
-    sleep_time = random.randint(get_env_int("SLEEP_MIN", 0), get_env_int("SLEEP_MAX", 300))
-    log(f"Jitter sleep: {sleep_time}s")
-    time.sleep(sleep_time)
     
     try:
         image_path = os.path.join("assets", "banner.png")

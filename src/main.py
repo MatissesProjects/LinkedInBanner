@@ -46,6 +46,11 @@ async def capture_live_banner(li_at):
         log("Navigating to profile for capture...")
         await page.goto("https://www.linkedin.com/in/me/", wait_until="networkidle", timeout=60000)
         
+        # Check for authentication failure
+        if "login" in page.url or "checkpoint" in page.url or "/in/" not in page.url:
+            log(f"Capture failed: Redirected to {page.url}. Authentication needed.")
+            return False
+
         banner_container_selector = '.profile-background-image'
         try:
             await page.wait_for_selector(banner_container_selector, timeout=15000)

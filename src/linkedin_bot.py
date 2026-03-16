@@ -64,10 +64,11 @@ async def update_banner(image_path):
             await page.goto("https://www.linkedin.com/in/me/", wait_until="networkidle", timeout=90000)
             log(f"Navigation finished. Current URL: {page.url}")
             
-            if "login" in page.url or page.url == "https://www.linkedin.com/":
-                log("WARNING: Redirected to login page or home page. Cookie rejected or challenge triggered.")
+            # Robust check for profile page vs redirection
+            if "login" in page.url or "checkpoint" in page.url or "/in/" not in page.url:
+                log(f"WARNING: Redirected to non-profile page: {page.url}. Cookie rejected or challenge triggered.")
                 await page.screenshot(path="auth_failure.png")
-                raise Exception("Authentication failed (redirected to home/login).")
+                raise Exception(f"Authentication failed (redirected to {page.url}). Please update your LI_AT_COOKIE.")
                 
             log("Profile page reached.")
         except Exception as e:

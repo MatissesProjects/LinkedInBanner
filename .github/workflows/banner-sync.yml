@@ -2,8 +2,12 @@ name: LinkedIn Banner Sync
 
 on:
   schedule:
-    - cron: '0 * * * *' # Run every hour
+    - cron: '0 0 1 1 *' # Dynamically updated by script
   workflow_dispatch: # Allow manual triggers
+
+# Allow the script to commit and push changes back to the repo
+permissions:
+  contents: write
 
 jobs:
   sync:
@@ -12,6 +16,9 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          # Required for git push
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -29,10 +36,8 @@ jobs:
           # Secrets
           LI_AT_COOKIE: ${{ secrets.LI_AT_COOKIE }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Uses the default token
-          
-          # Repository Variables
-          NEXT_RUN_TIME: ${{ vars.NEXT_RUN_TIME }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTIONS: "true"
           
           # Action Context
           GITHUB_REPOSITORY: ${{ github.repository }}
